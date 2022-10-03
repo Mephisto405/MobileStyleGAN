@@ -39,12 +39,64 @@ class Distiller(pl.LightningModule):
         self.cfg = cfg.trainer
 
         # teacher model
+        if "unified_network" in cfg.teacher:
+            print("load a unified network...")
+            unified_network_ckpt = torch.load(
+                cfg.teacher.unified_network.name, map_location="cpu"
+            )["g_ema"]
+
+            print("convert a unified network to a mapping network...")
+            mapping_net_ckpt = {
+                "params": {"style_dim": 512, "n_layers": 8, "lr_mlp": 0.01}
+            }
+            mapping_net_ckpt["ckpt"] = {}
+            for k, v in unified_network_ckpt.items():
+                if "style" in k:
+                    mapping_net_ckpt["ckpt"][k.replace("style", "layers")] = v
+
+            print("convert a unified network to a synthesis network...")
+            synthesis_net_ckpt = {
+                "params": {
+                    "size": 256,
+                    "style_dim": 512,
+                    "blur_kernel": [1, 3, 3, 1],
+                    "channels": [512, 512, 512, 512, 512, 256, 128],
+                }
+            }
+            synthesis_net_ckpt["ckpt"] = {}
+            for k, v in unified_network_ckpt.items():
+                if "input.input" == k:
+                    synthesis_net_ckpt["ckpt"][k] = v
+                elif k.startswith("conv1"):
+                    synthesis_net_ckpt["ckpt"][k] = v
+                elif k.startswith("to_rgb1"):
+                    synthesis_net_ckpt["ckpt"][k] = v
+                elif k.startswith("convs"):
+                    idx = int(k.split(".")[1])
+                    new_prefix = f"layers.{idx//2}.conv{idx%2+1}."
+                    surfix = ".".join(k.split(".")[2:])
+                    synthesis_net_ckpt["ckpt"][new_prefix + surfix] = v
+                elif k.startswith("to_rgbs"):
+                    idx = int(k.split(".")[1])
+                    new_prefix = f"layers.{idx}.to_rgb."
+                    surfix = ".".join(k.split(".")[2:])
+                    synthesis_net_ckpt["ckpt"][new_prefix + surfix] = v
+            synthesis_net_ckpt["ckpt"]["upsample.kernel"] = torch.tensor(
+                [
+                    [0.0625, 0.1875, 0.1875, 0.0625],
+                    [0.1875, 0.5625, 0.5625, 0.1875],
+                    [0.1875, 0.5625, 0.5625, 0.1875],
+                    [0.0625, 0.1875, 0.1875, 0.0625],
+                ]
+            )
+        else:
+            mapping_net_ckpt = model_zoo(**cfg.teacher.mapping_network)
+            synthesis_net_ckpt = model_zoo(**cfg.teacher.synthesis_network)
+
         print("load mapping network...")
-        mapping_net_ckpt = model_zoo(**cfg.teacher.mapping_network)
         self.mapping_net = MappingNetwork(**mapping_net_ckpt["params"]).eval()
         self.mapping_net.load_state_dict(mapping_net_ckpt["ckpt"])
         print("load synthesis network...")
-        synthesis_net_ckpt = model_zoo(**cfg.teacher.synthesis_network)
         self.synthesis_net = SynthesisNetwork(**synthesis_net_ckpt["params"]).eval()
         self.synthesis_net.load_state_dict(synthesis_net_ckpt["ckpt"])
         # student network

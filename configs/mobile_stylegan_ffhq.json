@@ -16,11 +16,8 @@
         "n_batches": 200
     },
     "teacher": {
-        "mapping_network": {
-            "name": "stylegan2_ffhq_config_f_mapping_network.ckpt"
-        },
-        "synthesis_network": {
-            "name": "stylegan2_ffhq_config_f_synthesis_network.ckpt"
+        "unified_network": {
+            "name": "../CAGAN/Model/full_size_model/256px_full_size.pt"
         }
     },
     "distillation_loss": {
