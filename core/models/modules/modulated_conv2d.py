@@ -1,4 +1,5 @@
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,12 +7,7 @@ import torch.nn.functional as F
 
 class ModulatedConv2d(nn.Module):
     def __init__(
-            self,
-            channels_in,
-            channels_out,
-            style_dim,
-            kernel_size,
-            demodulate=True
+        self, channels_in, channels_out, style_dim, kernel_size, demodulate=True
     ):
         super().__init__()
         # create conv
@@ -26,7 +22,7 @@ class ModulatedConv2d(nn.Module):
         if self.demodulate:
             self.register_buffer("style_inv", torch.randn(1, 1, channels_in, 1, 1))
         # some service staff
-        self.scale = 1.0 / math.sqrt(channels_in * kernel_size ** 2)
+        self.scale = 1.0 / math.sqrt(channels_in * kernel_size**2)
         self.padding = kernel_size // 2
 
     def forward(self, x, style):
@@ -45,28 +41,23 @@ class ModulatedConv2d(nn.Module):
 
     def get_demodulation(self, style):
         w = self.weight.unsqueeze(0)
-        norm = torch.rsqrt((self.scale * self.style_inv * w).pow(2).sum([2, 3, 4]) + 1e-8)
+        norm = torch.rsqrt(
+            (self.scale * self.style_inv * w).pow(2).sum([2, 3, 4]) + 1e-8
+        )
         demodulation = norm
         return demodulation.view(*demodulation.size(), 1, 1)
 
 
 class ModulatedDWConv2d(nn.Module):
     def __init__(
-            self,
-            channels_in,
-            channels_out,
-            style_dim,
-            kernel_size,
-            demodulate=True
+        self, channels_in, channels_out, style_dim, kernel_size, demodulate=True
     ):
         super().__init__()
         # create conv
         self.weight_dw = nn.Parameter(
             torch.randn(channels_in, 1, kernel_size, kernel_size)
         )
-        self.weight_permute = nn.Parameter(
-            torch.randn(channels_out, channels_in, 1, 1)
-        )
+        self.weight_permute = nn.Parameter(torch.randn(channels_out, channels_in, 1, 1))
         # create modulation network
         self.modulation = nn.Linear(style_dim, channels_in, bias=True)
         self.modulation.bias.data.fill_(1.0)
@@ -75,7 +66,7 @@ class ModulatedDWConv2d(nn.Module):
         if self.demodulate:
             self.register_buffer("style_inv", torch.randn(1, 1, channels_in, 1, 1))
         # some service staff
-        self.scale = 1.0 / math.sqrt(channels_in * kernel_size ** 2)
+        self.scale = 1.0 / math.sqrt(channels_in * kernel_size**2)
         self.padding = kernel_size // 2
 
     def forward(self, x, style):
@@ -95,6 +86,8 @@ class ModulatedDWConv2d(nn.Module):
 
     def get_demodulation(self, style):
         w = (self.weight_dw.transpose(0, 1) * self.weight_permute).unsqueeze(0)
-        norm = torch.rsqrt((self.scale * self.style_inv * w).pow(2).sum([2, 3, 4]) + 1e-8)
+        norm = torch.rsqrt(
+            (self.scale * self.style_inv * w).pow(2).sum([2, 3, 4]) + 1e-8
+        )
         demodulation = norm
         return demodulation.view(*demodulation.size(), 1, 1)

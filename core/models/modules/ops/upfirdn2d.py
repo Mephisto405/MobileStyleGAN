@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
-if torch.cuda.is_available(): from .upfirdn2d_cuda import *
+
+if torch.cuda.is_available():
+    from .upfirdn2d_cuda import *
 
 
 def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):

@@ -1,11 +1,13 @@
 import argparse
 import os
-import torch
+
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
-from core.utils import load_cfg, load_weights, select_weights
+import torch
+
 from core.distiller import Distiller
 from core.model_zoo import model_zoo
+from core.utils import load_cfg, load_weights, select_weights
 
 
 def build_logger(cfg):

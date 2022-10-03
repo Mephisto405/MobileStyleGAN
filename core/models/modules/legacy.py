@@ -1,7 +1,9 @@
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from .ops import *
 
 
@@ -18,7 +20,7 @@ class PixelNorm(nn.Module):
         super().__init__()
 
     def forward(self, input):
-        return input * torch.rsqrt(torch.mean(input ** 2, dim=1, keepdim=True) + 1e-8)
+        return input * torch.rsqrt(torch.mean(input**2, dim=1, keepdim=True) + 1e-8)
 
 
 class Upsample(nn.Module):
@@ -26,8 +28,8 @@ class Upsample(nn.Module):
         super().__init__()
 
         self.factor = factor
-        kernel = make_kernel(kernel) * (factor ** 2)
-        self.register_buffer('kernel', kernel)
+        kernel = make_kernel(kernel) * (factor**2)
+        self.register_buffer("kernel", kernel)
 
         p = kernel.shape[0] - factor
 
@@ -48,7 +50,7 @@ class Downsample(nn.Module):
 
         self.factor = factor
         kernel = make_kernel(kernel)
-        self.register_buffer('kernel', kernel)
+        self.register_buffer("kernel", kernel)
 
         p = kernel.shape[0] - factor
 
@@ -70,9 +72,9 @@ class Blur(nn.Module):
         kernel = make_kernel(kernel)
 
         if upsample_factor > 1:
-            kernel = kernel * (upsample_factor ** 2)
+            kernel = kernel * (upsample_factor**2)
 
-        self.register_buffer('kernel', kernel)
+        self.register_buffer("kernel", kernel)
 
         self.pad = pad
 
@@ -91,7 +93,7 @@ class EqualConv2d(nn.Module):
         self.weight = nn.Parameter(
             torch.randn(out_channel, in_channel, kernel_size, kernel_size)
         )
-        self.scale = 1 / math.sqrt(in_channel * kernel_size ** 2)
+        self.scale = 1 / math.sqrt(in_channel * kernel_size**2)
 
         self.stride = stride
         self.padding = padding
@@ -115,14 +117,21 @@ class EqualConv2d(nn.Module):
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]},'
-            f' {self.weight.shape[2]}, stride={self.stride}, padding={self.padding})'
+            f"{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]},"
+            f" {self.weight.shape[2]}, stride={self.stride}, padding={self.padding})"
         )
 
 
 class EqualLinear(nn.Module):
     def __init__(
-            self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1, activation=None, trace_model=False
+        self,
+        in_dim,
+        out_dim,
+        bias=True,
+        bias_init=0,
+        lr_mul=1,
+        activation=None,
+        trace_model=False,
     ):
         super().__init__()
 
@@ -143,7 +152,9 @@ class EqualLinear(nn.Module):
     def forward(self, input):
         if self.activation:
             out = F.linear(input, self.weight * self.scale)
-            out = fused_leaky_relu(out, self.bias * self.lr_mul, trace_model=self.trace_model)
+            out = fused_leaky_relu(
+                out, self.bias * self.lr_mul, trace_model=self.trace_model
+            )
 
         else:
             out = F.linear(
@@ -154,7 +165,7 @@ class EqualLinear(nn.Module):
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]})'
+            f"{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]})"
         )
 
 
@@ -207,7 +218,7 @@ class ModulatedConv2d(nn.Module):
 
             self.blur = Blur(blur_kernel, pad=(pad0, pad1))
 
-        fan_in = in_channel * kernel_size ** 2
+        fan_in = in_channel * kernel_size**2
         self.scale = 1 / math.sqrt(fan_in)
         self.padding = kernel_size // 2
 
@@ -221,8 +232,8 @@ class ModulatedConv2d(nn.Module):
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}({self.in_channel}, {self.out_channel}, {self.kernel_size}, '
-            f'upsample={self.upsample}, downsample={self.downsample})'
+            f"{self.__class__.__name__}({self.in_channel}, {self.out_channel}, {self.kernel_size}, "
+            f"upsample={self.upsample}, downsample={self.downsample})"
         )
 
     def forward(self, input, style):

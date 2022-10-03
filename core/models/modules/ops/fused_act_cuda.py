@@ -1,8 +1,9 @@
 import os
+
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.autograd import Function
+from torch.nn import functional as F
 from torch.utils.cpp_extension import load
 
 module_path = os.path.dirname(__file__)
@@ -13,6 +14,7 @@ fused = load(
         os.path.join(module_path, "fused_bias_act_kernel.cu"),
     ],
 )
+
 
 class FusedLeakyReLUFunctionBackward(Function):
     @staticmethod
@@ -38,7 +40,7 @@ class FusedLeakyReLUFunctionBackward(Function):
 
     @staticmethod
     def backward(ctx, gradgrad_input, gradgrad_bias):
-        out, = ctx.saved_tensors
+        (out,) = ctx.saved_tensors
         gradgrad_out = fused.fused_bias_act(
             gradgrad_input, gradgrad_bias, out, 3, 1, ctx.negative_slope, ctx.scale
         )
@@ -59,7 +61,7 @@ class FusedLeakyReLUFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        out, = ctx.saved_tensors
+        (out,) = ctx.saved_tensors
 
         grad_input, grad_bias = FusedLeakyReLUFunctionBackward.apply(
             grad_output, out, ctx.negative_slope, ctx.scale

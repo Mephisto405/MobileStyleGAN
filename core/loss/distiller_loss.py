@@ -1,17 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pytorch_wavelets import DWTForward, DWTInverse
+
 from core.loss.non_saturating_gan_loss import NonSaturatingGANLoss
 from core.loss.perceptual_loss import PerceptualLoss
-from pytorch_wavelets import DWTInverse, DWTForward
 
 
 class DistillerLoss(nn.Module):
     def __init__(
-            self,
-            discriminator_size,
-            perceptual_size=256,
-            loss_weights={"l1": 1.0, "l2": 1.0, "loss_p": 1.0, "loss_g": 0.5}
+        self,
+        discriminator_size,
+        perceptual_size=256,
+        loss_weights={"l1": 1.0, "l2": 1.0, "loss_p": 1.0, "loss_g": 0.5},
     ):
         super().__init__()
         # l1/l2 loss
@@ -24,7 +25,7 @@ class DistillerLoss(nn.Module):
         # loss weights
         self.loss_weights = loss_weights
         # utils
-        self.dwt = DWTForward(J=1, mode='zero', wave='db1')
+        self.dwt = DWTForward(J=1, mode="zero", wave="db1")
         self.idwt = DWTInverse(mode="zero", wave="db1")
 
     def loss_g(self, pred, gt):
@@ -32,7 +33,9 @@ class DistillerLoss(nn.Module):
         loss = {"l1": 0, "l2": 0}
         for _pred in pred["freq"]:
             _pred_rgb = self.dwt_to_img(_pred)
-            _gt_rgb = F.interpolate(gt["img"], size=_pred_rgb.size(-1), mode='bilinear', align_corners=True)
+            _gt_rgb = F.interpolate(
+                gt["img"], size=_pred_rgb.size(-1), mode="bilinear", align_corners=True
+            )
             _gt_freq = self.img_to_dwt(_gt_rgb)
             loss["l1"] += self.l1_loss(_pred_rgb, _gt_rgb)
             loss["l2"] += self.l2_loss(_pred_rgb, _gt_rgb)
@@ -54,7 +57,9 @@ class DistillerLoss(nn.Module):
 
     def loss_d(self, pred, gt):
         loss = {}
-        loss["loss"] = loss["loss_d"] = self.gan_loss.loss_d(pred["img"].detach(), gt["img"])
+        loss["loss"] = loss["loss_d"] = self.gan_loss.loss_d(
+            pred["img"].detach(), gt["img"]
+        )
         return loss
 
     def reg_d(self, real):

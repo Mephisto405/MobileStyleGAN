@@ -1,9 +1,11 @@
 import argparse
 import os
+
 import torch
-from core.utils import select_weights, load_cfg, save_cfg
+
 from core.models.mapping_network import MappingNetwork
-from core.models.synthesis_network import SynthesisNetwork, SynthesisBlock
+from core.models.synthesis_network import SynthesisBlock, SynthesisNetwork
+from core.utils import load_cfg, save_cfg, select_weights
 
 
 def extract_mnet(ckpt, ckpt_path):
@@ -12,10 +14,13 @@ def extract_mnet(ckpt, ckpt_path):
     n_layers = len([i for i, _ in enumerate(ckpt_mnet) if f"{i}.bias" in ckpt_mnet])
     mnet = MappingNetwork(style_dim, n_layers)
     mnet.layers.load_state_dict(ckpt_mnet)
-    torch.save({
-        "params": {"style_dim": style_dim, "n_layers": n_layers},
-        "ckpt": mnet.state_dict()
-    }, ckpt_path)
+    torch.save(
+        {
+            "params": {"style_dim": style_dim, "n_layers": n_layers},
+            "ckpt": mnet.state_dict(),
+        },
+        ckpt_path,
+    )
     return style_dim
 
 
@@ -37,11 +42,7 @@ def extract_snet(ckpt, style_dim, ckpt_path):
         c_in = conv1["conv.weight"].size()[2]
         c_out = conv2["conv.weight"].size()[1]
         channels.append(c_in)
-        block = SynthesisBlock(
-            c_in,
-            c_out,
-            style_dim
-        )
+        block = SynthesisBlock(c_in, c_out, style_dim)
         block.conv1.load_state_dict(conv1)
         block.conv2.load_state_dict(conv2)
         block.to_rgb.load_state_dict(to_rgb)
@@ -57,14 +58,13 @@ def extract_snet(ckpt, style_dim, ckpt_path):
     for i, _ in enumerate(snet.layers):
         snet.layers[i].load_state_dict(blocks[i].state_dict())
 
-    torch.save({
-        "params": {
-            "size": size,
-            "style_dim": style_dim,
-            "channels": channels
+    torch.save(
+        {
+            "params": {"size": size, "style_dim": style_dim, "channels": channels},
+            "ckpt": snet.state_dict(),
         },
-        "ckpt": snet.state_dict()
-    }, ckpt_path)
+        ckpt_path,
+    )
 
 
 def create_config(cfg_path, ckpt_mnet, ckpt_snet):
@@ -89,8 +89,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # pipeline configure
     parser.add_argument("--ckpt", type=str, help="path to input ckpt")
-    parser.add_argument("--ckpt-mnet", type=str, help="path to output mapping_network ckpt")
-    parser.add_argument("--ckpt-snet", type=str, help="path to output synthesis_network ckpt")
-    parser.add_argument("--cfg-path", type=str, default="", help="path to output config file")
+    parser.add_argument(
+        "--ckpt-mnet", type=str, help="path to output mapping_network ckpt"
+    )
+    parser.add_argument(
+        "--ckpt-snet", type=str, help="path to output synthesis_network ckpt"
+    )
+    parser.add_argument(
+        "--cfg-path", type=str, default="", help="path to output config file"
+    )
     args = parser.parse_args()
     main(args)

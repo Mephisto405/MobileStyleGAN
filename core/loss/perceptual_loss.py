@@ -6,9 +6,9 @@ import torchvision.models as models
 
 class PerceptualNetwork(nn.Module):
     def __init__(
-            self,
-            arch="vgg16",
-            layers={'3': "relu1_2", '8': "relu2_2", '15': "relu3_3", '22': "relu4_3"}
+        self,
+        arch="vgg16",
+        layers={"3": "relu1_2", "8": "relu2_2", "15": "relu3_3", "22": "relu4_3"},
     ):
         super().__init__()
         assert hasattr(models, arch)
@@ -26,10 +26,10 @@ class PerceptualNetwork(nn.Module):
 
 class PerceptualLoss(nn.Module):
     def __init__(
-            self,
-            size=None,
-            arch="vgg16",
-            layers={'3': "relu1_2", '8': "relu2_2", '15': "relu3_3", '22': "relu4_3"}
+        self,
+        size=None,
+        arch="vgg16",
+        layers={"3": "relu1_2", "8": "relu2_2", "15": "relu3_3", "22": "relu4_3"},
     ):
         super().__init__()
         self.size = size
@@ -48,9 +48,4 @@ class PerceptualLoss(nn.Module):
         return loss
 
     def _resize(self, img):
-        return F.interpolate(
-            img,
-            size=self.size,
-            mode="bilinear",
-            align_corners=False
-        )
+        return F.interpolate(img, size=self.size, mode="bilinear", align_corners=False)

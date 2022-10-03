@@ -15,13 +15,14 @@ def _SFB2D(low, highs, g0_row, g1_row, g0_col, g1_col, mode):
 
 
 class DWTInverse(nn.Module):
-    """ Performs a 2d DWT Inverse reconstruction of an image
+    """Performs a 2d DWT Inverse reconstruction of an image
 
     Args:
         wave (str or pywt.Wavelet): Which wavelet to use
         C: deprecated, will be removed in future
     """
-    def __init__(self, wave='db1', mode='zero', trace_model=False):
+
+    def __init__(self, wave="db1", mode="zero", trace_model=False):
         super().__init__()
         if isinstance(wave, str):
             wave = pywt.Wavelet(wave)
@@ -37,10 +38,10 @@ class DWTInverse(nn.Module):
                 g0_row, g1_row = wave[2], wave[3]
         # Prepare the filters
         filts = prep_filt_sfb2d(g0_col, g1_col, g0_row, g1_row)
-        self.register_buffer('g0_col', filts[0])
-        self.register_buffer('g1_col', filts[1])
-        self.register_buffer('g0_row', filts[2])
-        self.register_buffer('g1_row', filts[3])
+        self.register_buffer("g0_col", filts[0])
+        self.register_buffer("g1_col", filts[1])
+        self.register_buffer("g0_row", filts[2])
+        self.register_buffer("g1_row", filts[3])
         self.mode = mode
         self.trace_model = trace_model
 
@@ -71,16 +72,26 @@ class DWTInverse(nn.Module):
         # Do a multilevel inverse transform
         for h in yh[::-1]:
             if h is None:
-                h = torch.zeros(ll.shape[0], ll.shape[1], 3, ll.shape[-2],
-                                ll.shape[-1], device=ll.device)
+                h = torch.zeros(
+                    ll.shape[0],
+                    ll.shape[1],
+                    3,
+                    ll.shape[-2],
+                    ll.shape[-1],
+                    device=ll.device,
+                )
 
             # 'Unpad' added dimensions
             if ll.shape[-2] > h.shape[-2]:
-                ll = ll[...,:-1,:]
+                ll = ll[..., :-1, :]
             if ll.shape[-1] > h.shape[-1]:
-                ll = ll[...,:-1]
+                ll = ll[..., :-1]
             if not self.trace_model:
-                ll = SFB2D.apply(ll, h, self.g0_col, self.g1_col, self.g0_row, self.g1_row, mode)
+                ll = SFB2D.apply(
+                    ll, h, self.g0_col, self.g1_col, self.g0_row, self.g1_row, mode
+                )
             else:
-                ll = _SFB2D(ll, h, self.g0_col, self.g1_col, self.g0_row, self.g1_row, mode)
+                ll = _SFB2D(
+                    ll, h, self.g0_col, self.g1_col, self.g0_row, self.g1_row, mode
+                )
         return ll

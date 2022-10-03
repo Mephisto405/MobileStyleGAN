@@ -1,24 +1,34 @@
 import os
+
 # random
 import random
+
+import pytorch_lightning as pl
+
 # pytorch
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
-# dataset
-from core.dataset import NoiseDataset
-# teacher model
-from core.model_zoo import model_zoo
-from core.models.mapping_network import MappingNetwork
-from core.models.synthesis_network import SynthesisNetwork
-# student model
-from core.models.mobile_synthesis_network import MobileSynthesisNetwork
-# loss
-from core.loss.distiller_loss import DistillerLoss
-# evaluation network
-from core.models.inception_v3 import load_inception_v3
+
 # evaluation metric
 from piq import KID
+
+# dataset
+from core.dataset import NoiseDataset
+
+# loss
+from core.loss.distiller_loss import DistillerLoss
+
+# teacher model
+from core.model_zoo import model_zoo
+
+# evaluation network
+from core.models.inception_v3 import load_inception_v3
+from core.models.mapping_network import MappingNetwork
+
+# student model
+from core.models.mobile_synthesis_network import MobileSynthesisNetwork
+from core.models.synthesis_network import SynthesisNetwork
+
 # utils
 from core.utils import apply_trace_model_mode
 
@@ -40,7 +50,7 @@ class Distiller(pl.LightningModule):
         # student network
         self.student = MobileSynthesisNetwork(
             style_dim=self.mapping_net.style_dim,
-            channels=synthesis_net_ckpt["params"]["channels"][:-1]
+            channels=synthesis_net_ckpt["params"]["channels"][:-1],
         )
 
         # dataset
@@ -48,16 +58,17 @@ class Distiller(pl.LightningModule):
         self.trainset = NoiseDataset(batch_size=self.cfg.batch_size, **cfg.trainset)
         self.valset = NoiseDataset(batch_size=self.cfg.batch_size, **cfg.valset)
 
-        #compute style_mean
+        # compute style_mean
         self.register_buffer(
             "style_mean",
-            self.compute_mean_style(self.mapping_net.style_dim, wsize=self.wsize, batch_size=4096)
+            self.compute_mean_style(
+                self.mapping_net.style_dim, wsize=self.wsize, batch_size=4096
+            ),
         )
 
         # loss
         self.loss = DistillerLoss(
-            discriminator_size=self.synthesis_net.size,
-            **cfg.distillation_loss
+            discriminator_size=self.synthesis_net.size, **cfg.distillation_loss
         )
 
         # evaluator
@@ -67,10 +78,25 @@ class Distiller(pl.LightningModule):
         # device info
         self.register_buffer("device_info", torch.tensor(1))
 
-    def _log_loss(self, loss, on_step=True, on_epoch=False, prog_bar=True, logger=True, exclude=["loss"]):
+    def _log_loss(
+        self,
+        loss,
+        on_step=True,
+        on_epoch=False,
+        prog_bar=True,
+        logger=True,
+        exclude=["loss"],
+    ):
         for k, v in loss.items():
             if not k in exclude:
-                self.log(k, v, on_step=on_step, on_epoch=on_epoch, prog_bar=prog_bar, logger=logger)
+                self.log(
+                    k,
+                    v,
+                    on_step=on_step,
+                    on_epoch=on_epoch,
+                    prog_bar=prog_bar,
+                    logger=logger,
+                )
 
     def training_step(self, batch, batch_nb, optimizer_idx=0):
         mode = self.opt_to_mode[optimizer_idx]
@@ -105,7 +131,7 @@ class Distiller(pl.LightningModule):
         kid = self.kid.compute_metric(pred, gt)
         self.log("kid_val", kid, prog_bar=True)
         # agregate val_loss
-        loss = torch.stack([x['loss_val'] for x in outputs]).mean()
+        loss = torch.stack([x["loss_val"] for x in outputs]).mean()
         self.log("loss_val", loss, prog_bar=True)
 
     def generator_step(self, batch, batch_nb):
@@ -128,13 +154,17 @@ class Distiller(pl.LightningModule):
     @torch.no_grad()
     def make_sample(self, batch):
         def make_style():
-            var = torch.randn(self.cfg.batch_size, self.mapping_net.style_dim).to(self.device_info.device)
+            var = torch.randn(self.cfg.batch_size, self.mapping_net.style_dim).to(
+                self.device_info.device
+            )
             style = self.mapping_net(var)
             return style
 
         coin = random.random()
         if coin >= self.cfg.stylemix_p[1]:
-            style = self.mapping_net(batch["noise"]).unsqueeze(1).repeat(1, self.wsize, 1)
+            style = (
+                self.mapping_net(batch["noise"]).unsqueeze(1).repeat(1, self.wsize, 1)
+            )
         elif coin >= self.cfg.stylemix_p[0] and coin < self.cfg.stylemix_p[1]:
             style_a, style_b = make_style(), make_style()
             inject_index = random.randint(1, self.wsize - 1)
@@ -142,8 +172,12 @@ class Distiller(pl.LightningModule):
             style_b = style_b.unsqueeze(1).repeat(1, self.wsize - inject_index, 1)
             style = torch.cat([style_a, style_b], dim=1)
         else:
-            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(self.device_info.device)
-            style = self.mapping_net(var).view(1, self.wsize, self.mapping_net.style_dim)
+            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(
+                self.device_info.device
+            )
+            style = self.mapping_net(var).view(
+                1, self.wsize, self.mapping_net.style_dim
+            )
 
         if self.cfg.truncated:
             style = self.style_mean + 0.5 * (style - self.style_mean)
@@ -153,29 +187,47 @@ class Distiller(pl.LightningModule):
 
     @torch.no_grad()
     def compute_mean_style(self, style_dim, wsize=1, batch_size=4096):
-        style = self.mapping_net(torch.randn(4096, self.mapping_net.style_dim)).mean(0, keepdim=True)
+        style = self.mapping_net(torch.randn(4096, self.mapping_net.style_dim)).mean(
+            0, keepdim=True
+        )
         if wsize != 1:
             style = style.unsqueeze(1).repeat(1, wsize, 1)
         return style
 
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.trainset, batch_size=self.trainset.batch_size, num_workers=self.cfg.num_workers, shuffle=False)
+        return torch.utils.data.DataLoader(
+            self.trainset,
+            batch_size=self.trainset.batch_size,
+            num_workers=self.cfg.num_workers,
+            shuffle=False,
+        )
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.valset, batch_size=self.valset.batch_size, num_workers=self.cfg.num_workers, shuffle=False)
+        return torch.utils.data.DataLoader(
+            self.valset,
+            batch_size=self.valset.batch_size,
+            num_workers=self.cfg.num_workers,
+            shuffle=False,
+        )
 
     def configure_optimizers(self):
         opts = []
         self.opt_to_mode = {}
-        mode = self.cfg.mode.split(',')
-        for i, mode in enumerate(self.cfg.mode.split(',')):
+        mode = self.cfg.mode.split(",")
+        for i, mode in enumerate(self.cfg.mode.split(",")):
             if mode == "g":
                 print("setup generator train mode on...")
-                opts.append(torch.optim.Adam(self.student.parameters(), lr=self.cfg.lr_student))
+                opts.append(
+                    torch.optim.Adam(self.student.parameters(), lr=self.cfg.lr_student)
+                )
                 self.opt_to_mode[i] = "g"
             elif mode == "d":
                 print("setup discriminator train mode on...")
-                opts.append(torch.optim.Adam(self.loss.gan_loss.parameters(), lr=self.cfg.lr_gan))
+                opts.append(
+                    torch.optim.Adam(
+                        self.loss.gan_loss.parameters(), lr=self.cfg.lr_gan
+                    )
+                )
                 self.opt_to_mode[i] = "d"
         return opts, []
 
@@ -201,11 +253,7 @@ class Distiller(pl.LightningModule):
 
     def to_onnx(self, output_dir, w_plus=False):
         class Wrapper(nn.Module):
-            def __init__(
-                    self,
-                    synthesis_network,
-                    style_tmp
-            ):
+            def __init__(self, synthesis_network, style_tmp):
                 super().__init__()
                 self.m = synthesis_network
                 self.noise = self.m(style_tmp)["noise"]
@@ -218,7 +266,9 @@ class Distiller(pl.LightningModule):
             var = torch.randn(1, self.mapping_net.style_dim).to(self.device_info.device)
             style = self.mapping_net(var)
         else:
-            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(self.device_info.device)
+            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(
+                self.device_info.device
+            )
             style = self.mapping_net(var)
             style = style.view(1, self.wsize, -1)
 
@@ -228,9 +278,9 @@ class Distiller(pl.LightningModule):
             self.mapping_net,
             (var,),
             os.path.join(output_dir, "MappingNetwork.onnx"),
-            input_names = ['var'],
-            output_names = ['style'],
-            verbose=True
+            input_names=["var"],
+            output_names=["style"],
+            verbose=True,
         )
 
         print("convert synthesis network...")
@@ -239,9 +289,9 @@ class Distiller(pl.LightningModule):
             Wrapper(self.student, style),
             (style,),
             os.path.join(output_dir, "SynthesisNetwork.onnx"),
-            input_names = ['style'],
-            output_names = ['img'],
-            verbose=True
+            input_names=["style"],
+            output_names=["img"],
+            verbose=True,
         )
 
     def to_coreml(self, output_dir, w_plus=False):
@@ -252,7 +302,9 @@ class Distiller(pl.LightningModule):
             var = torch.randn(1, self.mapping_net.style_dim).to(self.device_info.device)
             style = self.mapping_net(var)
         else:
-            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(self.device_info.device)
+            var = torch.randn(self.wsize, self.mapping_net.style_dim).to(
+                self.device_info.device
+            )
             style = self.mapping_net(var)
             style = style.view(1, self.wsize, -1)
 
@@ -260,8 +312,7 @@ class Distiller(pl.LightningModule):
         self.mapping_net.apply(apply_trace_model_mode(True))
         mapping_net_trace = torch.jit.trace(self.mapping_net, var)
         mapping_net_coreml = ct.convert(
-            mapping_net_trace,
-            inputs=[ct.TensorType(name="var", shape=var.shape)]
+            mapping_net_trace, inputs=[ct.TensorType(name="var", shape=var.shape)]
         )
         mapping_net_coreml.save(os.path.join(output_dir, "MappingNetwork.mlmodel"))
 
@@ -269,6 +320,7 @@ class Distiller(pl.LightningModule):
         self.student.apply(apply_trace_model_mode(True))
         # initialize noise buffers
         self.student(style)
+
         class Wrapper(nn.Module):
             def __init__(self, m):
                 super().__init__()
@@ -280,7 +332,6 @@ class Distiller(pl.LightningModule):
         synthesis_net = Wrapper(self.student)
         synthesis_net_trace = torch.jit.trace(synthesis_net, style)
         synthesis_net_coreml = ct.convert(
-            synthesis_net_trace,
-            inputs=[ct.TensorType(name="style", shape=style.shape)]
+            synthesis_net_trace, inputs=[ct.TensorType(name="style", shape=style.shape)]
         )
         synthesis_net_coreml.save(os.path.join(output_dir, "SynthesisNetwork.mlmodel"))

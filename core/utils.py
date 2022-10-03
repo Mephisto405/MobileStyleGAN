@@ -1,6 +1,7 @@
 import json
-import torch
+
 import gdown
+import torch
 from addict import Dict
 
 

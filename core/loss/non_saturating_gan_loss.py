@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import grad
+
 from core.models.discriminator import Discriminator
+
 from .diffaug import get_default_transforms
 
 
@@ -20,18 +22,10 @@ class R1Regularization(nn.Module):
 
 
 class NonSaturatingGANLoss(nn.Module):
-    def __init__(
-            self,
-            image_size,
-            channels_in=3,
-            r1_gamma=10):
+    def __init__(self, image_size, channels_in=3, r1_gamma=10):
         super().__init__()
         # discriminator
-        self.m = Discriminator(
-            size=image_size,
-            channels_in=channels_in,
-            activate=False
-        )
+        self.m = Discriminator(size=image_size, channels_in=channels_in, activate=False)
         # diffaugs
         self.transforms = get_default_transforms()
         # r1 regularization
@@ -43,17 +37,17 @@ class NonSaturatingGANLoss(nn.Module):
         return self.m(x)
 
     def loss_g(self, fake, *args, **kwargs):
-        fake_loss = F.softplus( -self(fake, True)["out"] ).mean()
+        fake_loss = F.softplus(-self(fake, True)["out"]).mean()
         return fake_loss
 
     def loss_d(self, fake, real):
         fake, real = fake.detach(), real.detach()
         # fake loss
         fake_pred = self(fake, True)["out"]
-        fake_loss = F.softplus( fake_pred ).mean()
+        fake_loss = F.softplus(fake_pred).mean()
         # real loss
         real_pred = self(real, True)["out"]
-        real_loss = F.softplus( -real_pred ).mean()
+        real_loss = F.softplus(-real_pred).mean()
         # total loss
         total_loss = fake_loss + real_loss
         return total_loss

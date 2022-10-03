@@ -1,7 +1,8 @@
 import os
+
 import torch
-from torch.nn import functional as F
 from torch.autograd import Function
+from torch.nn import functional as F
 from torch.utils.cpp_extension import load
 
 module_path = os.path.dirname(__file__)
@@ -17,7 +18,7 @@ upfirdn2d_op = load(
 class UpFirDn2dBackward(Function):
     @staticmethod
     def forward(
-            ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad, in_size, out_size
+        ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad, in_size, out_size
     ):
 
         up_x, up_y = up
@@ -59,7 +60,7 @@ class UpFirDn2dBackward(Function):
 
     @staticmethod
     def backward(ctx, gradgrad_input):
-        kernel, = ctx.saved_tensors
+        (kernel,) = ctx.saved_tensors
 
         gradgrad_input = gradgrad_input.reshape(-1, ctx.in_size[2], ctx.in_size[3], 1)
 

@@ -1,5 +1,6 @@
 import torch
 
+
 class NoiseDataset(torch.utils.data.Dataset):
     def __init__(self, emb_size, batch_size, n_batches):
         self.emb_size = emb_size
