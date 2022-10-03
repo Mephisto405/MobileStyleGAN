@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import torch
+from torchvision import utils
 
 from core.distiller import Distiller
 from core.model_zoo import model_zoo
@@ -17,14 +18,22 @@ def main(args):
         ckpt = model_zoo(args.ckpt)
         load_weights(distiller, ckpt["state_dict"])
 
-    while True:
-        var = torch.randn(1, distiller.mapping_net.style_dim)
-        img_s, img_t = distiller.simultaneous_forward(var, truncated=args.truncated)
-        img = np.hstack([tensor_to_img(img_t[0].cpu()), tensor_to_img(img_s[0].cpu())])
-        cv2.imshow("compare", img)
-        key = chr(cv2.waitKey() & 255)
-        if key == "q":
-            break
+    var = torch.randn(args.n_sample, distiller.mapping_net.style_dim)
+    img_s, img_t = distiller.simultaneous_forward(var, truncated=args.truncated)
+    utils.save_image(
+        img_s,
+        "student.png",
+        nrow=int(args.n_sample**0.5),
+        normalize=True,
+        range=(-1, 1),
+    )
+    utils.save_image(
+        img_t,
+        "teacher.png",
+        nrow=int(args.n_sample**0.5),
+        normalize=True,
+        range=(-1, 1),
+    )
 
 
 if __name__ == "__main__":
@@ -43,5 +52,6 @@ if __name__ == "__main__":
         help="path to checkpoint",
     )
     parser.add_argument("--truncated", action="store_true", help="use truncation mode")
+    parser.add_argument("--n_sample", type=int, default=25, help="number of samples")
     args = parser.parse_args()
     main(args)

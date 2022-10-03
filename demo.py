@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import torch
+from torchvision import utils
 
 from core.distiller import Distiller
 from core.model_zoo import model_zoo
@@ -17,13 +18,15 @@ def main(args):
         ckpt = model_zoo(args.ckpt)
         load_weights(distiller, ckpt["state_dict"])
 
-    while True:
-        var = torch.randn(1, distiller.mapping_net.style_dim)
-        img_s = distiller(var, truncated=args.truncated, generator=args.generator)
-        cv2.imshow("demo", tensor_to_img(img_s[0].cpu()))
-        key = chr(cv2.waitKey() & 255)
-        if key == "q":
-            break
+    var = torch.randn(args.n_sample, distiller.mapping_net.style_dim)
+    img_s = distiller(var, truncated=args.truncated, generator=args.generator)
+    utils.save_image(
+        img_s,
+        f"{args.generator}.png",
+        nrow=int(args.n_sample**0.5),
+        normalize=True,
+        range=(-1, 1),
+    )
 
 
 if __name__ == "__main__":
@@ -48,5 +51,6 @@ if __name__ == "__main__":
         default="student",
         help="generator mode: [student|teacher]",
     )
+    parser.add_argument("--n_sample", type=int, default=25, help="number of samples")
     args = parser.parse_args()
     main(args)

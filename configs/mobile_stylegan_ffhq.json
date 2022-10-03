@@ -1,10 +1,9 @@
 {
     "logger": {
-        "type": "NeptuneLogger",
+        "type": "TensorBoardLogger",
         "params": {
-            "offline_mode": true,
-            "project_name": "MobileStyleGAN",
-            "experiment_name": "baseline"
+            "save_dir": "logs",
+            "name": "MobileStyleGAN"
         }
     },
     "trainset": {
@@ -30,14 +29,14 @@
         }
     },
     "trainer": {
-        "monitor": "kid_val",
+        "monitor": "fid_val",
         "monitor_mode": "min",
         "style_mean": 4096,
         "style_mean_weight": 0.5,
-        "num_workers": 0,
+        "num_workers": 20,
         "lr_student": 5e-4,
         "lr_gan": 5e-4,
-        "batch_size": 2,
+        "batch_size": 4,
         "max_epochs": 100,
         "mode": "g,d",
         "reg_d_interval": 16,
@@ -45,6 +44,7 @@
         "stylemix_p": [
             0.0,
             0.0
-        ]
+        ],
+        "val_vis_samples": 25
     }
 }
