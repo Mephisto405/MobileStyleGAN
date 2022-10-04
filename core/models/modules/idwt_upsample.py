@@ -6,11 +6,7 @@ from .modulated_conv2d import ModulatedConv2d
 
 
 class IDWTUpsaplme(nn.Module):
-    def __init__(
-        self,
-        channels_in,
-        style_dim,
-    ):
+    def __init__(self, channels_in, style_dim):
         super().__init__()
         self.channels = channels_in // 4
         assert self.channels * 4 == channels_in

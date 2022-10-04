@@ -259,10 +259,7 @@ class FIDInceptionE_1(models.inception.InceptionE):
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
-        branch3x3 = [
-            self.branch3x3_2a(branch3x3),
-            self.branch3x3_2b(branch3x3),
-        ]
+        branch3x3 = [self.branch3x3_2a(branch3x3), self.branch3x3_2b(branch3x3)]
         branch3x3 = torch.cat(branch3x3, 1)
 
         branch3x3dbl = self.branch3x3dbl_1(x)
@@ -294,10 +291,7 @@ class FIDInceptionE_2(models.inception.InceptionE):
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
-        branch3x3 = [
-            self.branch3x3_2a(branch3x3),
-            self.branch3x3_2b(branch3x3),
-        ]
+        branch3x3 = [self.branch3x3_2a(branch3x3), self.branch3x3_2b(branch3x3)]
         branch3x3 = torch.cat(branch3x3, 1)
 
         branch3x3dbl = self.branch3x3dbl_1(x)

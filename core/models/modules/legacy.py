@@ -20,7 +20,7 @@ class PixelNorm(nn.Module):
         super().__init__()
 
     def forward(self, input):
-        return input * torch.rsqrt(torch.mean(input**2, dim=1, keepdim=True) + 1e-8)
+        return input * torch.rsqrt(torch.mean(input ** 2, dim=1, keepdim=True) + 1e-8)
 
 
 class Upsample(nn.Module):
@@ -28,7 +28,7 @@ class Upsample(nn.Module):
         super().__init__()
 
         self.factor = factor
-        kernel = make_kernel(kernel) * (factor**2)
+        kernel = make_kernel(kernel) * (factor ** 2)
         self.register_buffer("kernel", kernel)
 
         p = kernel.shape[0] - factor
@@ -72,7 +72,7 @@ class Blur(nn.Module):
         kernel = make_kernel(kernel)
 
         if upsample_factor > 1:
-            kernel = kernel * (upsample_factor**2)
+            kernel = kernel * (upsample_factor ** 2)
 
         self.register_buffer("kernel", kernel)
 
@@ -93,7 +93,7 @@ class EqualConv2d(nn.Module):
         self.weight = nn.Parameter(
             torch.randn(out_channel, in_channel, kernel_size, kernel_size)
         )
-        self.scale = 1 / math.sqrt(in_channel * kernel_size**2)
+        self.scale = 1 / math.sqrt(in_channel * kernel_size ** 2)
 
         self.stride = stride
         self.padding = padding
@@ -218,7 +218,7 @@ class ModulatedConv2d(nn.Module):
 
             self.blur = Blur(blur_kernel, pad=(pad0, pad1))
 
-        fan_in = in_channel * kernel_size**2
+        fan_in = in_channel * kernel_size ** 2
         self.scale = 1 / math.sqrt(fan_in)
         self.padding = kernel_size // 2
 

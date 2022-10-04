@@ -1,5 +1,3 @@
-from datetime import datetime
-from lib2to3.pgen2.pgen import generate_grammar
 import os
 
 # random
@@ -10,10 +8,10 @@ import pytorch_lightning as pl
 # pytorch
 import torch
 import torch.nn as nn
-from torchvision import utils
 
 # evaluation metric
-from piq import KID, FID
+from piq import FID, KID
+from torchvision import utils
 
 # dataset
 from core.dataset import NoiseDataset
@@ -135,8 +133,7 @@ class Distiller(pl.LightningModule):
         self.fixed_var = torch.randn(
             self.cfg.val_vis_samples, self.mapping_net.style_dim
         )
-        self.curr_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        os.makedirs(f"logs/{self.curr_time}", exist_ok=True)
+        self.checkpoint_dir = kwargs["checkpoint_dir"]
 
         # device info
         self.register_buffer("device_info", torch.tensor(1))
@@ -202,24 +199,25 @@ class Distiller(pl.LightningModule):
         img_s = self.forward(
             self.fixed_var, truncated=self.cfg.truncated, generator="student"
         )
-        utils.save_image(
-            img_s,
-            f"logs/{self.curr_time}/student_{self.global_step}.png",
-            nrow=int(self.cfg.val_vis_samples**0.5),
-            normalize=True,
-            range=(-1, 1),
-        )
-        if self.global_step == 0:
-            img_t = self.forward(
-                self.fixed_var, truncated=self.cfg.truncated, generator="teacher"
-            )
+        if self.global_rank == 0:
             utils.save_image(
-                img_t,
-                f"logs/{self.curr_time}/teacher_{self.global_step}.png",
-                nrow=int(self.cfg.val_vis_samples**0.5),
+                img_s,
+                f"{self.checkpoint_dir}/student_{self.global_step}.png",
+                nrow=int(self.cfg.val_vis_samples ** 0.5),
                 normalize=True,
                 range=(-1, 1),
             )
+            if self.global_step == 0:
+                img_t = self.forward(
+                    self.fixed_var, truncated=self.cfg.truncated, generator="teacher"
+                )
+                utils.save_image(
+                    img_t,
+                    f"{self.checkpoint_dir}/teacher_{self.global_step}.png",
+                    nrow=int(self.cfg.val_vis_samples ** 0.5),
+                    normalize=True,
+                    range=(-1, 1),
+                )
 
     def generator_step(self, batch, batch_nb):
         style, gt = self.make_sample(batch)

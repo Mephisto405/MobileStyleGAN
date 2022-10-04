@@ -41,6 +41,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as TF
 from PIL import Image
+from pytorch_fid.inception import InceptionV3
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 
@@ -51,8 +52,6 @@ except ImportError:
     def tqdm(x):
         return x
 
-
-from pytorch_fid.inception import InceptionV3
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument("--batch-size", type=int, default=50, help="Batch size to use")

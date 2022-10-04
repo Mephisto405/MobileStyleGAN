@@ -1,5 +1,6 @@
 import argparse
 import os
+from datetime import datetime
 
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
@@ -16,13 +17,14 @@ def build_logger(cfg):
 
 def main(args):
     cfg = load_cfg(args.cfg)
-    distiller = Distiller(cfg)
+    distiller = Distiller(cfg, checkpoint_dir=args.checkpoint_dir)
     if args.ckpt is not None:
         ckpt = model_zoo(args.ckpt)
         load_weights(distiller, ckpt["state_dict"])
     logger = build_logger(cfg.logger)
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=os.getcwd() if args.checkpoint_dir is None else args.checkpoint_dir,
+        filepath=args.checkpoint_dir,
         save_top_k=True,
         save_last=True,
         verbose=True,
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoint_dir",
         type=str,
-        default=None,
+        default=f"logs/{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}",
         help="path to checkpoint_dir for saving the model periodically by monitoring a validation quantity",
     )
     parser.add_argument(
