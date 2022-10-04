@@ -11,12 +11,14 @@
             "program": "train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "env": {"CUDA_VISIBLE_DEVICES": "2,3" },
+            //"env": {"CUDA_VISIBLE_DEVICES": "2,3" },
             "args": [
                 "--cfg",
                 "configs/mobile_stylegan_ffhq.json",
                 "--gpus",
                 "2",
+                "--ckpt",
+                "last.ckpt"
             ]
         }
     ]
