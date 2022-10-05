@@ -1,4 +1,8 @@
 logs/MobileStyleGAN
+*vino*/
+*.onnx
+*.mapping
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
