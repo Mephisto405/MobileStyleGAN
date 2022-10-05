@@ -1,5 +1,10 @@
 logs/MobileStyleGAN
+*vino*/
+*.onnx
+*.mapping
 *.png
+onnx_opcounter/
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

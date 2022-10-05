@@ -11,12 +11,12 @@ For more details, please refer to the [paper](https://arxiv.org/abs/2104.04767).
 
 ## Requirements
 
-* Python 3.8+
-* Ninja build: `sudo apt install -y ninja-build`
-* PyTorch < 1.11.0 & CUDA Toolkit
-  * `conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit=11.3 -c pytorch -c conda-forge` or
-  * `pip install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1 -f https://download.pytorch.org/whl/torch_stable.html`
-* 1–8 high-end NVIDIA GPUs with at least 12 GB of memory. We have done all testing and development using DL Workstation with 4x2080Ti
+- Python 3.8+
+- Ninja build: `sudo apt install -y ninja-build`
+- PyTorch < 1.11.0 & CUDA Toolkit
+  - `conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit=11.3 -c pytorch -c conda-forge` or
+  - `pip install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1 -f https://download.pytorch.org/whl/torch_stable.html`
+- 1–8 high-end NVIDIA GPUs with at least 12 GB of memory. We have done all testing and development using DL Workstation with 4x2080Ti
 
 ## Training
 
@@ -59,21 +59,54 @@ python evaluate_fid.py <path_to_ref_dataset> <path_to_generated_imgs>
 ## Demo
 
 Run demo visualization using MobileStyleGAN:
+
 ```bash
 python demo.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt>
 ```
 
 Run visual comparison using StyleGAN2 vs. MobileStyleGAN:
+
 ```bash
 python compare.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt>
 ```
 
 ## Convert to ONNX
+
 ```bash
 python train.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt> --export-model onnx --export-dir <output_dir>
 ```
 
+## Convert ONNX to OpenVINO
+
+```bash
+python3 -m venv vino_env=2021.4.2
+source vino_env\=2021.4.2/bin/activate
+python -m pip install --upgrade pip
+pip install openvino-dev[pytorch,onnx]==2021.4.2
+mo --input_model "logs/2022-10-04_17:09:07/MappingNetwork.onnx" --output_dir "logs/2022-10-04_17:09:07/"
+mo --input_model "logs/2022-10-04_17:09:07/SynthesisNetwork.onnx" --output_dir "logs/2022-10-04_17:09:07/"
+deactivate
+```
+
+### ONNX MAC(=FLOPs/2) Counter
+
+https://github.com/ThanatosShinji/onnx-tool
+
+```bash
+python3 -m venv onnx_tool
+source onnx_tool/bin/activate
+python -m pip install --upgrade pip
+pip install onnx-tool
+```
+
+```python
+import onnx_tool
+onnx_tool.model_profile("MappingNetwork.onnx", savenode="mnet_ops.txt")
+onnx_tool.model_profile("SynthesisNetwork.onnx", savenode="snet_ops.txt")
+```
+
 ## Convert to CoreML
+
 ```bash
 python train.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt> --export-model coreml --export-dir <output_dir>
 ```
@@ -84,26 +117,27 @@ We provide external library [random_face](https://github.com/bes-dev/random_face
 
 ## Pretrained models
 
-|Name|FID|
-|:---|:--|
-|[mobilestylegan_ffhq.ckpt](https://drive.google.com/uc?id=11Kja0XGE8liLb6R5slNZjF3j3v_6xydt)|7.75|
+| Name                                                                                         | FID  |
+| :------------------------------------------------------------------------------------------- | :--- |
+| [mobilestylegan_ffhq.ckpt](https://drive.google.com/uc?id=11Kja0XGE8liLb6R5slNZjF3j3v_6xydt) | 7.75 |
 
-(*) Our framework supports automatic download pretrained models, just use `--ckpt <pretrined_model_name>`.
+(\*) Our framework supports automatic download pretrained models, just use `--ckpt <pretrined_model_name>`.
 
 ## Legacy license
 
-|Code|Source|License|
-|:---|:-----|:------|
-|[Custom CUDA kernels](core/models/modules/ops/)|https://github.com/NVlabs/stylegan2|[Nvidia License](LICENSE-NVIDIA)|
-|[StyleGAN2 blocks](core/models/modules/legacy.py)|https://github.com/rosinality/stylegan2-pytorch|MIT|
+| Code                                              | Source                                          | License                          |
+| :------------------------------------------------ | :---------------------------------------------- | :------------------------------- |
+| [Custom CUDA kernels](core/models/modules/ops/)   | https://github.com/NVlabs/stylegan2             | [Nvidia License](LICENSE-NVIDIA) |
+| [StyleGAN2 blocks](core/models/modules/legacy.py) | https://github.com/rosinality/stylegan2-pytorch | MIT                              |
 
 ## Acknowledgements
 
 We want to thank the people whose works contributed to our project::
-* Tero Karras, Samuli Laine, Miika Aittala, Janne Hellsten, Jaakko Lehtinen, Timo Aila for research related to style based generative models.
-* Kim Seonghyeon for implementation of StyleGAN2 in [PyTorch](https://github.com/rosinality/stylegan2-pytorch).
-* Fergal Cotter for implementation of Discrete Wavelet Transforms and Inverse Discrete Wavelet Transforms in [PyTorch](https://github.com/fbcotter/pytorch_wavelets).
-* Cyril Diagne for the excellent [demo of how to run MobileStyleGAN directly into the web-browser](https://github.com/cyrildiagne/mobilestylegan-web-demo).
+
+- Tero Karras, Samuli Laine, Miika Aittala, Janne Hellsten, Jaakko Lehtinen, Timo Aila for research related to style based generative models.
+- Kim Seonghyeon for implementation of StyleGAN2 in [PyTorch](https://github.com/rosinality/stylegan2-pytorch).
+- Fergal Cotter for implementation of Discrete Wavelet Transforms and Inverse Discrete Wavelet Transforms in [PyTorch](https://github.com/fbcotter/pytorch_wavelets).
+- Cyril Diagne for the excellent [demo of how to run MobileStyleGAN directly into the web-browser](https://github.com/cyrildiagne/mobilestylegan-web-demo).
 
 ## Citation
 

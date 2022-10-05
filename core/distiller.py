@@ -203,7 +203,7 @@ class Distiller(pl.LightningModule):
             utils.save_image(
                 img_s,
                 f"{self.checkpoint_dir}/student_{self.global_step}.png",
-                nrow=int(self.cfg.val_vis_samples ** 0.5),
+                nrow=int(self.cfg.val_vis_samples**0.5),
                 normalize=True,
                 range=(-1, 1),
             )
@@ -214,7 +214,7 @@ class Distiller(pl.LightningModule):
                 utils.save_image(
                     img_t,
                     f"{self.checkpoint_dir}/teacher_{self.global_step}.png",
-                    nrow=int(self.cfg.val_vis_samples ** 0.5),
+                    nrow=int(self.cfg.val_vis_samples**0.5),
                     normalize=True,
                     range=(-1, 1),
                 )
@@ -366,6 +366,7 @@ class Distiller(pl.LightningModule):
             input_names=["var"],
             output_names=["style"],
             verbose=True,
+            opset_version=11,
         )
 
         print("convert synthesis network...")
@@ -377,6 +378,7 @@ class Distiller(pl.LightningModule):
             input_names=["style"],
             output_names=["img"],
             verbose=True,
+            opset_version=11,
         )
 
     def to_coreml(self, output_dir, w_plus=False):
