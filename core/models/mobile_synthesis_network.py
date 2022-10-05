@@ -1,14 +1,8 @@
 import torch
 import torch.nn as nn
 
-from .modules import (
-    ConstantInput,
-    DWTInverse,
-    MobileSynthesisBlock,
-    ModulatedDWConv2d,
-    MultichannelIamge,
-    StyledConv2d,
-)
+from .modules import (ConstantInput, DWTInverse, MobileSynthesisBlock,
+                      ModulatedDWConv2d, MultichannelIamge, StyledConv2d)
 from .utils import NoiseManager
 
 
