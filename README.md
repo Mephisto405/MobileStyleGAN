@@ -13,7 +13,9 @@ For more details, please refer to the [paper](https://arxiv.org/abs/2104.04767).
 
 * Python 3.8+
 * Ninja build: `sudo apt install -y ninja-build`
-* PyTorch < 1.11.0 & CUDA Toolkit: `conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit=11.3 -c pytorch -c conda-forge`
+* PyTorch < 1.11.0 & CUDA Toolkit
+  * `conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit=11.3 -c pytorch -c conda-forge` or
+  * `pip install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1 -f https://download.pytorch.org/whl/torch_stable.html`
 * 1–8 high-end NVIDIA GPUs with at least 12 GB of memory. We have done all testing and development using DL Workstation with 4x2080Ti
 
 ## Training

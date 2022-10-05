@@ -22,7 +22,7 @@ class ModulatedConv2d(nn.Module):
         if self.demodulate:
             self.register_buffer("style_inv", torch.randn(1, 1, channels_in, 1, 1))
         # some service staff
-        self.scale = 1.0 / math.sqrt(channels_in * kernel_size**2)
+        self.scale = 1.0 / math.sqrt(channels_in * kernel_size ** 2)
         self.padding = kernel_size // 2
 
     def forward(self, x, style):
@@ -66,7 +66,7 @@ class ModulatedDWConv2d(nn.Module):
         if self.demodulate:
             self.register_buffer("style_inv", torch.randn(1, 1, channels_in, 1, 1))
         # some service staff
-        self.scale = 1.0 / math.sqrt(channels_in * kernel_size**2)
+        self.scale = 1.0 / math.sqrt(channels_in * kernel_size ** 2)
         self.padding = kernel_size // 2
 
     def forward(self, x, style):

@@ -7,7 +7,7 @@ if torch.cuda.is_available():
 
 
 class FusedLeakyReLU(nn.Module):
-    def __init__(self, channel, negative_slope=0.2, scale=2**0.5, trace_model=False):
+    def __init__(self, channel, negative_slope=0.2, scale=2 ** 0.5, trace_model=False):
         super().__init__()
         self.bias = nn.Parameter(torch.zeros(channel))
         self.negative_slope = negative_slope
@@ -21,7 +21,7 @@ class FusedLeakyReLU(nn.Module):
 
 
 def fused_leaky_relu(
-    input, bias, negative_slope=0.2, scale=2**0.5, trace_model=False
+    input, bias, negative_slope=0.2, scale=2 ** 0.5, trace_model=False
 ):
     if input.device.type == "cpu":
         rest_dim = [1] * (input.ndim - bias.ndim - 1)

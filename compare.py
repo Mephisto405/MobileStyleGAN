@@ -23,14 +23,14 @@ def main(args):
     utils.save_image(
         img_s,
         "student.png",
-        nrow=int(args.n_sample**0.5),
+        nrow=int(args.n_sample ** 0.5),
         normalize=True,
         range=(-1, 1),
     )
     utils.save_image(
         img_t,
         "teacher.png",
-        nrow=int(args.n_sample**0.5),
+        nrow=int(args.n_sample ** 0.5),
         normalize=True,
         range=(-1, 1),
     )
