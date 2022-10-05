@@ -73,11 +73,6 @@ python compare.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt>
 python train.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt> --export-model onnx --export-dir <output_dir>
 ```
 
-## Convert to CoreML
-```bash
-python train.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt> --export-model coreml --export-dir <output_dir>
-```
-
 ## Convert ONNX to OpenVINO
 ```bash
 python3 -m venv vino_env=2021.4.2
@@ -87,6 +82,11 @@ pip install openvino-dev[pytorch,onnx]==2021.4.2
 mo --input_model "logs/2022-10-04_17:09:07/MappingNetwork.onnx" --output_dir "logs/2022-10-04_17:09:07/"
 mo --input_model "logs/2022-10-04_17:09:07/SynthesisNetwork.onnx" --output_dir "logs/2022-10-04_17:09:07/"
 deactivate
+```
+
+## Convert to CoreML
+```bash
+python train.py --cfg configs/mobile_stylegan_ffhq.json --ckpt <path_to_ckpt> --export-model coreml --export-dir <output_dir>
 ```
 
 ## Deployment using OpenVINO

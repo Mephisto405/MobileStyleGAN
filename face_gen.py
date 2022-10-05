@@ -5,6 +5,7 @@ import random_face.functional as F
 from random_face.engine_openvino import EngineOpenvino
 import argparse
 import time
+import numpy as np
 
 def get_face(engine: EngineOpenvino, cfg):
     start_time = time.time()
@@ -18,12 +19,15 @@ def main(cfg):
     _ = engine.get_random_face(truncate=cfg["no_truncate"])
 
     wait_time = 1000
+    cv2.namedWindow("result", cv2.WINDOW_KEEPRATIO)
 
-    face, elapsed_time = get_face(engine, cfg)
-    win_name = f"Elapsed time: {elapsed_time}"
-    cv2.namedWindow(win_name, cv2.WINDOW_KEEPRATIO)
-    cv2.imshow(win_name, face)
-    while cv2.getWindowProperty(win_name, cv2.WND_PROP_VISIBLE) >= 1:
+    while cv2.getWindowProperty("result", cv2.WND_PROP_VISIBLE) >= 1:
+        face, elapsed_time = get_face(engine, cfg)
+        face = np.ascontiguousarray(face)
+        win_name = f"Elapsed time: {elapsed_time}"
+        cv2.putText(face, win_name, (0,int(face.shape[0]*0.99)), cv2.FONT_HERSHEY_SIMPLEX, face.shape[0]/1024, (255,0,0), 1 + face.shape[0]//512)
+        cv2.imshow("result", face)
+
         keyCode = cv2.waitKey(wait_time)
         if (keyCode & 0xFF) == ord("q"):
             cv2.destroyAllWindows()
