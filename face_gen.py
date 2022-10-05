@@ -1,11 +1,12 @@
-import cv2
-
+import argparse
 import os
+import time
+
+import cv2
+import numpy as np
 import random_face.functional as F
 from random_face.engine_openvino import EngineOpenvino
-import argparse
-import time
-import numpy as np
+
 
 def get_face(engine: EngineOpenvino, cfg):
     start_time = time.time()
@@ -14,24 +15,37 @@ def get_face(engine: EngineOpenvino, cfg):
     elapsed_time = end_time - start_time
     return face, elapsed_time
 
+
 def main(cfg):
     engine = EngineOpenvino(cfg)
-    _ = engine.get_random_face(truncate=cfg["no_truncate"])
+    face = engine.get_random_face(truncate=cfg["no_truncate"])
 
-    wait_time = 1000
-    cv2.namedWindow("result", cv2.WINDOW_KEEPRATIO)
+    if cfg["interactive"]:
+        wait_time = 1000
+        cv2.namedWindow("result", cv2.WINDOW_KEEPRATIO)
 
-    while cv2.getWindowProperty("result", cv2.WND_PROP_VISIBLE) >= 1:
-        face, elapsed_time = get_face(engine, cfg)
-        face = np.ascontiguousarray(face)
-        win_name = f"Elapsed time: {elapsed_time}"
-        cv2.putText(face, win_name, (0,int(face.shape[0]*0.99)), cv2.FONT_HERSHEY_SIMPLEX, face.shape[0]/1024, (255,0,0), 1 + face.shape[0]//512)
-        cv2.imshow("result", face)
+        while cv2.getWindowProperty("result", cv2.WND_PROP_VISIBLE) >= 1:
+            face, elapsed_time = get_face(engine, cfg)
+            face = np.ascontiguousarray(face)
+            win_name = f"Elapsed time: {elapsed_time}"
+            cv2.putText(
+                face,
+                win_name,
+                (0, int(face.shape[0] * 0.99)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                face.shape[0] / 1024,
+                (255, 0, 0),
+                1 + face.shape[0] // 512,
+            )
+            cv2.imshow("result", face)
 
-        keyCode = cv2.waitKey(wait_time)
-        if (keyCode & 0xFF) == ord("q"):
-            cv2.destroyAllWindows()
-            break
+            keyCode = cv2.waitKey(wait_time)
+            if (keyCode & 0xFF) == ord("q"):
+                cv2.destroyAllWindows()
+                break
+    else:
+        cv2.imwrite("face.png", face)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,6 +54,7 @@ if __name__ == "__main__":
     parser.add_argument("--style_dim", type=int, default=512)
     parser.add_argument("--n_samples", type=int, default=4096)
     parser.add_argument("--no_truncate", action="store_false")
+    parser.add_argument("--interactive", action="store_true")
     args = parser.parse_args()
 
     cfg = vars(args)

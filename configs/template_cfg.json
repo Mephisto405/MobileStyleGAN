@@ -17,10 +17,10 @@
     },
     "teacher": {
         "mapping_network": {
-            "name": ""
+            "name": "logs/gt_msg/stylegan2_ffhq_config_f_mapping_network.ckpt"
         },
         "synthesis_network": {
-            "name": ""
+            "name": "logs/gt_msg/stylegan2_ffhq_config_f_synthesis_network.ckpt"
         }
     },
     "distillation_loss": {
@@ -33,17 +33,22 @@
         }
     },
     "trainer": {
-        "monitor": "kid_val",
+        "monitor": "fid_val",
         "monitor_mode": "min",
         "style_mean": 4096,
         "style_mean_weight": 0.5,
         "num_workers": 0,
         "lr_student": 5e-4,
         "lr_gan": 5e-4,
-        "batch_size": 2,
+        "batch_size": 8,
         "max_epochs": 100,
         "mode": "g,d",
         "reg_d_interval": 16,
-        "truncated": false
+        "truncated": false,
+        "stylemix_p": [
+            0.0,
+            0.0
+        ],
+        "val_vis_samples": 25
     }
 }

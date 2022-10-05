@@ -1,35 +1,27 @@
 import os
-
 # random
 import random
 
 import pytorch_lightning as pl
-
 # pytorch
 import torch
 import torch.nn as nn
-
 # evaluation metric
 from piq import FID, KID
 from torchvision import utils
 
 # dataset
 from core.dataset import NoiseDataset
-
 # loss
 from core.loss.distiller_loss import DistillerLoss
-
 # teacher model
 from core.model_zoo import model_zoo
-
 # evaluation network
 from core.models.inception_v3 import load_inception_v3
 from core.models.mapping_network import MappingNetwork
-
 # student model
 from core.models.mobile_synthesis_network import MobileSynthesisNetwork
 from core.models.synthesis_network import SynthesisNetwork
-
 # utils
 from core.utils import apply_trace_model_mode
 
@@ -366,7 +358,7 @@ class Distiller(pl.LightningModule):
             input_names=["var"],
             output_names=["style"],
             verbose=True,
-            opset_version=11,
+            # opset_version=11,
         )
 
         print("convert synthesis network...")
@@ -378,7 +370,7 @@ class Distiller(pl.LightningModule):
             input_names=["style"],
             output_names=["img"],
             verbose=True,
-            opset_version=11,
+            # opset_version=11,
         )
 
     def to_coreml(self, output_dir, w_plus=False):
